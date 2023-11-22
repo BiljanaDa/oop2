@@ -1,6 +1,6 @@
 <?php 
 
-class Artikli {
+class Artikli implements Pozajmica {
     public string $serijskiBroj;
     public string $proizvodjac;
     public string $model;
@@ -17,6 +17,18 @@ class Artikli {
 
     public function info() {
         return "Serijski broj: " . $this->serijskiBroj . " proizvodjac: " . $this->proizvodjac . " model: " . $this->model . "cena: " . $this->cena . "stanje na lageru: " . $this->stanjeNaLageru;
+    }
+    
+    public function pozajmi() {
+        if($this->stanjeNaLageru >0) {
+            $this->stanjeNaLageru --;
+            $this->cena *= 0.75;
+        }
+    }
+
+    public function vrati() {
+        $this->stanjeNaLageru ++;
+        $this->cena /= 0.75;
     }
     
 }
@@ -80,6 +92,7 @@ class GPU extends Artikli {
 
 class Prodavnica {
     private $listaArtikala = [];
+    public float $balans =0;
 
     public function dodajArtikal(Artikli $artikal) {
         $this->listaArtikala[] = $artikal;
@@ -90,13 +103,49 @@ class Prodavnica {
             $artikal->info();
         }
     }
+
+    public function prodaja($artikal) {
+        if(in_array($artikal, $this->listaArtikala) && $artikal->stanjeNaLageru >= 1) {
+            $this->balans += $artikal->cena;
+            $artikal->stanjeNaLageru -= 1;
+
+        } else {
+            echo "Artikal nije na lageru.";
+        }
+    }
+
+    public function pozajmiArtikal($artikal) {
+        foreach($this->listaArtikala as $artikal) {
+            if($artikal instanceof Pozajmica) {
+                if($artikal->pozajmi()) {
+                    $this->balans += $artikal->cena;
+                    echo "Artikal {$artikal->model} je uspesno iznajmljen.";
+                } else {
+                    echo "Artikal nije moguce iznajmiti.";
+                }
+            }
+        }
+    }
+
+    public function vratiArtikal($artikal) {
+        foreach($this->listaArtikala as $artikal) {
+            if($artikal instanceof Pozajmica) {
+                $artikal->vrati();
+                echo "Artikal {$artikal->model} je uspesno vracen.";
+            }
+        }
+    }
+}
+
+interface Pozajmica {
+    public function pozajmi();
+    public function vrati();
 }
 
 $prodavnica = new Prodavnica();
 
 $artikal1 = new RAM("234", "Apple", "Air", 1000, 3, "250gb", "2.2 GHz");
 echo "Model $artikal1->model proizvodjaca $artikal1->proizvodjac ima $artikal1->kapacitet kapacitet i na lageru ga ima $artikal1->stanjeNaLageru";
-
 
 
 
